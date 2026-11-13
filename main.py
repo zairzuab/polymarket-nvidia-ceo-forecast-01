@@ -11,10 +11,10 @@ quantiles (5%, 25%, 50%, 75%, 95%) of that minute's price.
 Model: a random walk around the checkpoint price, with a per-market
 volatility estimated from the last 120 minutes of price changes and a
 sub-diffusive spread. For minute h after the checkpoint, the quantile
-at level tau is x + z_tau * sigma * h**0.42, clamped to [0, 1] and
+at level tau is x + z_tau * sigma * h**0.40, clamped to [0, 1] and
 rounded to 6 decimals, where x is the checkpoint price, z_tau the
 standard normal quantile, and sigma the market's realized 1-minute
-volatility over the last 120 minutes, clamped to [0.0005, 0.006].
+volatility over the last 120 minutes, clamped to [0.0005, 0.008].
 No drift: recent momentum is anti-predictive on the practice history
 (adding it makes the loss much worse), so the median stays at x.
 
@@ -23,8 +23,14 @@ as sqrt(h), practice loss 0.3636): the market's true minute volatility
 is far below 0.0025 most of the time and varies by market and regime,
 so a fixed wide spread pays at every quiet minute; and prices
 mean-revert, so the spread grows slower than sqrt(h). On the six
-practice cases this scores 0.279 against the baseline's 0.372
+practice cases this scores 0.278 against the baseline's 0.372
 (measured on prices fetched from Polymarket's public history).
+The exponent 0.40 and the 0.008 cap were chosen by a sweep over
+windows 60-720, exponents 0.35-0.50 and caps: this combination wins
+on the three latest practice cases (the most representative of the
+final window) and is the best overall; longer windows, beta scaling
+by price level, volatility weighting, global volatility and separate
+outer-quantile exponents all scored worse.
 
 Standard library only, no network, deterministic: the same case always
 produces the same file byte for byte.
@@ -37,8 +43,8 @@ import os
 # Forecast knobs, tuned on the six practice cases.
 VOL_WINDOW = 120
 SIGMA_MIN = 0.0005
-SIGMA_MAX = 0.006
-H_EXP = 0.42
+SIGMA_MAX = 0.008
+H_EXP = 0.40
 Z = (-1.6448536269514722, -0.6744897501960817, 0.0,
      0.6744897501960817, 1.6448536269514722)
 
